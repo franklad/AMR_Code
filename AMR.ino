@@ -3,16 +3,18 @@ const int MR = 4;
 const int EL = 6;
 const int ML = 7;
 
-const int trigPinL = A3;
-const int echoPinL = A2;
-const int trigPinR = A1;
-const int echoPinR = A0;
+const int trigPinL = 12;
+const int echoPinL = 11;
+const int trigPinR = 3;
+const int echoPinR = 2;
 
-const int topRSensor = 2;
+const int topRSensor = A2;
 const int topLSensor = 9;
-const int bottomRSensor = 3;
+const int bottomRSensor = A3;
 const int bottomLSensor = 10;
 const int midTopSensor = 8;
+const int sideRSensor = A0;
+const int sideLSensor = A1;
 
 const int led = A5;
 const int potPin = A4;
@@ -43,6 +45,8 @@ void initialise() {
   pinMode(bottomRSensor, INPUT_PULLUP);
   pinMode(bottomLSensor, INPUT_PULLUP);
   pinMode(midTopSensor, INPUT_PULLUP);
+  pinMode(sideRSensor, INPUT_PULLUP);
+  pinMode(sideLSensor, INPUT_PULLUP);
 
   digitalWrite(led, HIGH);
   delay(100);
@@ -134,9 +138,9 @@ void adjustL() {
 }
 
 void setup() {
- Serial.begin(9600);
- initialise();
- debug = false;
+  Serial.begin(9600);
+  initialise();
+  debug = false;
 }
 void loop() {
   randNum = random(500);
@@ -156,7 +160,9 @@ void loop() {
     topLActive = digitalRead(topLSensor) == LOW;
     bottomRActive = digitalRead(bottomRSensor) == LOW;
     bottomLActive = digitalRead(bottomLSensor) == LOW;
-   
+    sideRActive = digitalRead(sideRSensor) == HIGH;
+    sideLActive = digitalRead(sideLSensor) == HIGH;
+    
     if (!(topRActive || topLActive) && !(bottomRActive || bottomLActive) && !midTopActive) {
       advance(speedR, speedL);
     }
@@ -178,11 +184,11 @@ void loop() {
         turn_L60Deg();
       }
     }
-    if ((topRActive && bottomRActive) && !(midTopActive || topLActive || bottomLActive)) {
-      adjustL();
+    if (((topRActive && bottomRActive) || sideRActive) && !(midTopActive || topLActive || bottomLActive)) {
+      adjustR();
     }
-    if ((topLActive && bottomLActive) && !(midTopActive || topRActive || bottomRActive)) {
-      adjustR ();
+    if (((topLActive && bottomLActive) || sideLActive) && !(midTopActive || topRActive || bottomRActive)) {
+      adjustL();
     }
   }
   if (!checkRight) {
@@ -201,11 +207,13 @@ void loop() {
     Serial.print(digitalRead(midTopSensor) == LOW);
     Serial.print(" - ");
     Serial.println(digitalRead(topLSensor) == LOW);
+    Serial.print(digitalRead(sideRSensor) == HIGH);
     Serial.print(digitalRead(bottomRSensor) == LOW);
     Serial.print(" - ");
     Serial.print("0");
     Serial.print(" - ");
-    Serial.println(digitalRead(bottomLSensor ) == LOW);
+    Serial.print(digitalRead(bottomLSensor ) == LOW);
+    Serial.println(digitalRead(sideRSensor) == HIGH);
     Serial.println(" - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     delay(300);
     Serial.print(rightSensor);
