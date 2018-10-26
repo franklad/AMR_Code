@@ -162,7 +162,7 @@ void loop() {
     bottomLActive = digitalRead(bottomLSensor) == LOW;
     sideRActive = digitalRead(sideRSensor) == HIGH;
     sideLActive = digitalRead(sideLSensor) == HIGH;
-    
+
     if (!(topRActive || topLActive) && !(bottomRActive || bottomLActive) && !midTopActive) {
       advance(speedR, speedL);
     }
@@ -201,6 +201,7 @@ void loop() {
     turn_R60Deg();
     turn_R60Deg();
   }
+
   if (debug) {
     Serial.print(digitalRead(topRSensor) == LOW);
     Serial.print(" - ");
@@ -212,7 +213,7 @@ void loop() {
     Serial.print(" - ");
     Serial.print("0");
     Serial.print(" - ");
-    Serial.print(digitalRead(bottomLSensor ) == LOW);
+    Serial.print(digitalRead(bottomLSensor) == LOW);
     Serial.println(digitalRead(sideRSensor) == HIGH);
     Serial.println(" - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     delay(300);
