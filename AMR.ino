@@ -3,18 +3,18 @@ const int MR = 4;
 const int EL = 6;
 const int ML = 7;
 
-const int trigPinL = 12;
-const int echoPinL = 11;
-const int trigPinR = 3;
-const int echoPinR = 2;
+const int trigPinR = A0;
+const int echoPinR = A1;
+const int trigPinL = A2;
+const int echoPinL = A3;
 
-const int topRSensor = A2;
+const int topRSensor = 12;
 const int topLSensor = 9;
-const int bottomRSensor = A3;
+const int bottomRSensor = 11;
 const int bottomLSensor = 10;
 const int midTopSensor = 8;
-const int sideRSensor = A0;
-const int sideLSensor = A1;
+const int sideRSensor = 3;
+const int sideLSensor = 2;
 
 const int led = A5;
 const int potPin = A4;
