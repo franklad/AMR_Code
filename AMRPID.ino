@@ -111,9 +111,9 @@ void calcPID(){
 }
 
 void readSensors(){
-  LFSArray[0] = digitalRead(LS);
-  LFSArray[1] = digitalRead(MS);
-  LFSArray[2] = digitalRead(RS);
+  LFSArray[0] = digitalRead(lineFollowSensorL);
+  LFSArray[1] = digitalRead(lineFollowSensorM);
+  LFSArray[2] = digitalRead(lineFollowSensorR);
 
   if(LFSArray[0] == 1 && LFSArray[1] == 0 && LFSArray[2] == 0) error = 2;
   if(LFSArray[0] == 1 && LFSArray[1] == 1 && LFSArray[2] == 0) error = 1;
@@ -124,9 +124,9 @@ void readSensors(){
 }
 void motorPIDcontrol()
 {
-  int leftMotorSpeed = 1500 + PIDvalue;
-  int rightMotorSpeed = 1500 - PIDvalue;
-
+  int leftMotorSpeed = 80 + PIDvalue;
+  int rightMotorSpeed = 80 - PIDvalue;
+  advance(rightMotorSpeed, leftMotorSpeed);
   Serial.print("Error: ");
   Serial.print(error);
   Serial.print(" - ");
@@ -154,7 +154,7 @@ void loop() {
   
   if (minDistance && checkRight && checkLeft) {
     readSensors();
-    calculatePID();
+    calcPID();
     motorPIDcontrol();
   }
   if (!checkRight) {
