@@ -124,13 +124,11 @@ void loop() {
     } 
     else if (fireL && !fireM && !fireR){
       turn_R60Deg();
-      stopNow();
       fan_start();
     }
     
     else if(!fireL && !fireM && fireR){
       turn_L60Deg();
-      stopNow();
       fan_start();
     }
     else if(!fireL && !fireM && !fireR){
