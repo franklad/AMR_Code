@@ -8,22 +8,17 @@ const int echoPinR = A1;
 const int trigPinL = A2;
 const int echoPinL = A3;
 
-const int topRSensor = 12;
-const int topLSensor = 9;
-const int bottomRSensor = 11;
-const int bottomLSensor = 10;
-const int midTopSensor = 8;
-const int sideRSensor = 3;
-const int sideLSensor = 2;
+const int topIRL = 12;
+const int topIRM = 11;
+const int topIRR = 10;
 
-const int led = A5;
+const int fan = A5;
 const int potPin = A4;
 
-int speedR, mapedVal, speedL, randNum;
+int speedR, mapedVal, speedL;
 const uint32_t period = 500L;
 long distance, duration, rightSensor, leftSensor;
-bool debug, minDistance, checkRight, checkLeft;
-bool topRActive, topLActive, bottomRActive, bottomLActive, midTopActive, sideRActive, sideLActive;
+bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR;
 
 long SonarSensor(int trigPin, int echoPin) {
  digitalWrite(trigPin, LOW);
@@ -34,31 +29,19 @@ long SonarSensor(int trigPin, int echoPin) {
  duration = pulseIn(echoPin, HIGH);
  return (duration / 2) / 29.1;
 }
-void initialise() {
+void initialisePins() {
   pinMode(trigPinR, OUTPUT);
   pinMode(echoPinR, INPUT);
   pinMode(trigPinL, OUTPUT);
   pinMode(echoPinL, INPUT);
+  
+  pinMode(fan,OUTPUT);
 
-  pinMode(topRSensor, INPUT_PULLUP);
-  pinMode(topLSensor, INPUT_PULLUP);
-  pinMode(bottomRSensor, INPUT_PULLUP);
-  pinMode(bottomLSensor, INPUT_PULLUP);
-  pinMode(midTopSensor, INPUT_PULLUP);
-  pinMode(sideRSensor, INPUT_PULLUP);
-  pinMode(sideLSensor, INPUT_PULLUP);
-
-  digitalWrite(led, HIGH);
-  delay(100);
-  digitalWrite(led, LOW);
-  delay(100);
-  digitalWrite(led, HIGH);
-  delay(100);
-  digitalWrite(led, LOW);
-  delay(100);
-  digitalWrite(led, HIGH);
+  pinMode(topIRL,INPUT);
+  pinMode(topIRM,INPUT);
+  pinMode(topIRR,INPUT);
 }
-void stop() {
+void stopNow() {
  digitalWrite(ER, LOW);
  digitalWrite(EL, LOW);
 }
@@ -89,63 +72,40 @@ void turn_R(char a, char b) {
 void turn_R60Deg(){
  for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
    turn_R(150, 150);
-   digitalWrite(led, HIGH);
-   delay(100);
-   digitalWrite(led, LOW);
-   delay(50);
  }
- digitalWrite(led, HIGH);
 }
 void turn_L60Deg() {
  for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
    turn_L(150, 150);
-   digitalWrite(led, HIGH);
-   delay(100);
-   digitalWrite(led, LOW);
-   delay(50);
  }
- digitalWrite(led, HIGH);
 }
 void adjustR(){
   for (uint32_t tStart = millis(); (millis() - tStart) < 350L; ) {
     back_off(speedR, speedL + 20);
-    digitalWrite(led, HIGH);
-    delay(100);
-    digitalWrite(led, LOW);
-    delay(50);
   }
   turn_R(100, 100);
-  digitalWrite(led, HIGH);
-  delay(100);
-  digitalWrite(led, LOW);
-  delay(50);
-  digitalWrite(led, HIGH);
 }
 void adjustL() {
   for (uint32_t tStart = millis(); (millis() - tStart) < 350L; ) {
     back_off(speedR + 20, speedL);
-    digitalWrite(led, HIGH);
-    delay(100);
-    digitalWrite(led, LOW);
-    delay(50);
   }
   turn_L(100, 100);
-  digitalWrite(led, HIGH);
-  delay(100);
-  digitalWrite(led, LOW);
-  delay(50);
-  digitalWrite(led, HIGH);
+}
+void fan_start(){
+  analogWrite(fan, 255);
+}
+void fan_stop(){
+  analogWrite(fan, 0);
 }
 
 void setup() {
-  Serial.begin(9600);
-  initialise();
+  initialisePins();
   debug = false;
+  if (debug) Serial.begin(9600);
 }
 void loop() {
-  randNum = random(500);
   speedR = map(analogRead(potPin),0,1023,100,250);
-  speedL = speedR;
+  speedL = speedR + 10;
   rightSensor = SonarSensor(trigPinR, echoPinR);
   delay(50);
   leftSensor = SonarSensor(trigPinL, echoPinL);
@@ -153,42 +113,29 @@ void loop() {
   minDistance = leftSensor > 1 && rightSensor > 1;
   checkRight = rightSensor <= 8;
   checkLeft = leftSensor <= 8;
+  fireL = (digitalRead(topIRL) == 1);
+  fireM = (digitalRead(topIRM) == 1);
+  fireR = (digitalRead(topIRR) == 1);
   
   if (minDistance && checkRight && checkLeft) {
-    topRActive = digitalRead(topRSensor) == LOW;
-    midTopActive = digitalRead(midTopSensor) == LOW;
-    topLActive = digitalRead(topLSensor) == LOW;
-    bottomRActive = digitalRead(bottomRSensor) == LOW;
-    bottomLActive = digitalRead(bottomLSensor) == LOW;
-    sideRActive = digitalRead(sideRSensor) == HIGH;
-    sideLActive = digitalRead(sideLSensor) == HIGH;
-
-    if (!(topRActive || topLActive) && !(bottomRActive || bottomLActive) && !midTopActive) {
+    if (!fireL && fireM && !fireR){
+      stopNow();
+      fan_start();
+    } 
+    else if (fireL && !fireM && !fireR){
+      turn_R60Deg();
+      stopNow();
+      fan_start();
+    }
+    
+    else if(!fireL && !fireM && fireR){
+      turn_L60Deg();
+      stopNow();
+      fan_start();
+    }
+    else if(!fireL && !fireM && !fireR){
+      fan_stop();
       advance(speedR, speedL);
-    }
-    if ((!topRActive && !topLActive && !midTopActive) && (bottomRActive || bottomLActive)) {
-      advance(speedR, speedL);
-    }
-    if ((topRActive || topLActive || midTopActive) && (!bottomRActive && !bottomLActive)) {
-      for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
-        back_off(speedR, speedL);
-        digitalWrite(led, HIGH);
-        delay(100);
-        digitalWrite(led, LOW);
-        delay(50);
-      }
-      digitalWrite(led, HIGH);
-      if (randNum % 2 == 0) {
-        turn_R60Deg();
-      } else {
-        turn_L60Deg();
-      }
-    }
-    if (((topRActive && bottomRActive) || sideRActive) && !(midTopActive || topLActive || bottomLActive)) {
-      adjustR();
-    }
-    if (((topLActive && bottomLActive) || sideLActive) && !(midTopActive || topRActive || bottomRActive)) {
-      adjustL();
     }
   }
   if (!checkRight) {
@@ -203,22 +150,14 @@ void loop() {
   }
 
   if (debug) {
-    Serial.print(digitalRead(topRSensor) == LOW);
+    Serial.print(digitalRead(topIRL));
     Serial.print(" - ");
-    Serial.print(digitalRead(midTopSensor) == LOW);
+    Serial.print(digitalRead(topIRM));
     Serial.print(" - ");
-    Serial.println(digitalRead(topLSensor) == LOW);
-    Serial.print(digitalRead(sideRSensor) == HIGH);
-    Serial.print(digitalRead(bottomRSensor) == LOW);
-    Serial.print(" - ");
-    Serial.print("0");
-    Serial.print(" - ");
-    Serial.print(digitalRead(bottomLSensor) == LOW);
-    Serial.println(digitalRead(sideRSensor) == HIGH);
-    Serial.println(" - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-    delay(300);
+    Serial.println(digitalRead(topIRR));
+    Serial.println(" ---------------------------------- ");
     Serial.print(rightSensor);
     Serial.print(" - ");
-    Serial.println(leftSensor);   
+    Serial.println(leftSensor);
   }
 }
