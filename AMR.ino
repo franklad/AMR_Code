@@ -12,13 +12,16 @@ const int topIRL = 12;
 const int topIRM = 11;
 const int topIRR = 10;
 
+const int sideL = 9;
+const int sideR = 8;
+
 const int fan = A5;
 const int potPin = A4;
 
-int speedR, mapedVal, speedL;
+int speedR, mapedVal, speedL, randNum;
 const uint32_t period = 500L;
 long distance, duration, rightSensor, leftSensor;
-bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR;
+bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR, isSideR, isSideL;
 
 long SonarSensor(int trigPin, int echoPin) {
  digitalWrite(trigPin, LOW);
@@ -40,6 +43,9 @@ void initialisePins() {
   pinMode(topIRL,INPUT);
   pinMode(topIRM,INPUT);
   pinMode(topIRR,INPUT);
+
+  pinMode(sideL, INPUT_PULLUP);
+  pinMode(sideR, INPUT_PULLUP);
 }
 void stopNow() {
  digitalWrite(ER, LOW);
@@ -92,7 +98,9 @@ void adjustL() {
   turn_L(100, 100);
 }
 void fan_start(){
-  analogWrite(fan, 255);
+  for (uint32_t tStart = millis(); (millis() - tStart) < 5000L; ) {
+    analogWrite(fan, 255);
+  }
 }
 void fan_stop(){
   analogWrite(fan, 0);
@@ -100,10 +108,11 @@ void fan_stop(){
 
 void setup() {
   initialisePins();
-  debug = false;
+  debug = true;
   if (debug) Serial.begin(9600);
 }
 void loop() {
+  randNum = random(300);
   speedR = map(analogRead(potPin),0,1023,100,250);
   speedL = speedR + 10;
   rightSensor = SonarSensor(trigPinR, echoPinR);
@@ -116,24 +125,48 @@ void loop() {
   fireL = (digitalRead(topIRL) == 1);
   fireM = (digitalRead(topIRM) == 1);
   fireR = (digitalRead(topIRR) == 1);
+  isSideL = (digitalRead(sideL) == 1);
+  isSideR = (digitalRead(sideR) == 1);
   
   if (minDistance && checkRight && checkLeft) {
-    if (!fireL && fireM && !fireR){
+    if (!isSideL && !isSideR){
+    if (fireL && fireM && fireR){
       stopNow();
       fan_start();
     } 
-    else if (fireL && !fireM && !fireR){
-      turn_R60Deg();
+    else if (!fireR && (fireL || (fireL && fireM))){
+      for (uint32_t tStart = millis(); (millis() - tStart) < 200; ) {
+        turn_R(150, 150);
+      }
+      stopNow();
       fan_start();
     }
     
-    else if(!fireL && !fireM && fireR){
-      turn_L60Deg();
+    else if(!fireL && (fireR || (fireR && fireM)) ){
+      for (uint32_t tStart = millis(); (millis() - tStart) < 200; ) {
+        turn_L(150, 150);
+      }
+      stopNow();
       fan_start();
     }
     else if(!fireL && !fireM && !fireR){
       fan_stop();
       advance(speedR, speedL);
+    }
+    }
+    if (!isSideL && isSideR){
+      turn_R(150, 150);
+    }
+    if (isSideL && !isSideR){
+      turn_L(150, 150);
+    }
+    if (isSideL && isSideR){
+      for (uint32_t tStart = millis(); (millis() - tStart) < 500; ) {
+        back_off(150, 150);
+      }
+      if (randNum%2 == 1){
+        turn_R60Deg();
+      } else {turn_R60Deg();}
     }
   }
   if (!checkRight) {
