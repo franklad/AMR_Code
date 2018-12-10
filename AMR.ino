@@ -3,17 +3,16 @@ const int MR = 4;
 const int EL = 6;
 const int ML = 7;
 
-const int trigPinR = A0;
-const int echoPinR = A1;
-const int trigPinL = A2;
-const int echoPinL = A3;
+const int trigPinL = A0;
+const int echoPinL = A1;
+const int trigPinR = A2;
+const int echoPinR = A3;
 
-const int topIRL = 12;
+const int topIRL = 3;
 const int topIRM = 11;
-const int topIRR = 10;
+const int topIRR = 2;
 
-const int sideL = 9;
-const int sideR = 8;
+const int ballDetect = 12;
 
 const int fan = A5;
 const int potPin = A4;
@@ -21,7 +20,7 @@ const int potPin = A4;
 int speedR, mapedVal, speedL, randNum;
 const uint32_t period = 500L;
 long distance, duration, rightSensor, leftSensor;
-bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR, isSideR, isSideL;
+bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR, isSideR, isSideL, lineDetected;
 
 long SonarSensor(int trigPin, int echoPin) {
  digitalWrite(trigPin, LOW);
@@ -44,8 +43,8 @@ void initialisePins() {
   pinMode(topIRM,INPUT);
   pinMode(topIRR,INPUT);
 
-  pinMode(sideL, INPUT_PULLUP);
-  pinMode(sideR, INPUT_PULLUP);
+  pinMode(ballDetect, INPUT_PULLUP);
+
 }
 void stopNow() {
  digitalWrite(ER, LOW);
@@ -110,11 +109,9 @@ void setup() {
   initialisePins();
   debug = true;
   if (debug) Serial.begin(9600);
+  lineDetected = false;
 }
 void loop() {
-  randNum = random(300);
-  speedR = map(analogRead(potPin),0,1023,100,250);
-  speedL = speedR + 10;
   rightSensor = SonarSensor(trigPinR, echoPinR);
   delay(50);
   leftSensor = SonarSensor(trigPinL, echoPinL);
@@ -122,63 +119,12 @@ void loop() {
   minDistance = leftSensor > 1 && rightSensor > 1;
   checkRight = rightSensor <= 8;
   checkLeft = leftSensor <= 8;
-  fireL = (digitalRead(topIRL) == 1);
-  fireM = (digitalRead(topIRM) == 1);
-  fireR = (digitalRead(topIRR) == 1);
-  isSideL = (digitalRead(sideL) == 1);
-  isSideR = (digitalRead(sideR) == 1);
-  
-  if (minDistance && checkRight && checkLeft) {
-    if (!isSideL && !isSideR){
-    if (fireL && fireM && fireR){
-      stopNow();
-      fan_start();
-    } 
-    else if (!fireR && (fireL || (fireL && fireM))){
-      for (uint32_t tStart = millis(); (millis() - tStart) < 200; ) {
-        turn_R(150, 150);
-      }
-      stopNow();
-      fan_start();
-    }
-    
-    else if(!fireL && (fireR || (fireR && fireM)) ){
-      for (uint32_t tStart = millis(); (millis() - tStart) < 200; ) {
-        turn_L(150, 150);
-      }
-      stopNow();
-      fan_start();
-    }
-    else if(!fireL && !fireM && !fireR){
-      fan_stop();
-      advance(speedR, speedL);
-    }
-    }
-    if (!isSideL && isSideR){
-      turn_R(150, 150);
-    }
-    if (isSideL && !isSideR){
-      turn_L(150, 150);
-    }
-    if (isSideL && isSideR){
-      for (uint32_t tStart = millis(); (millis() - tStart) < 500; ) {
-        back_off(150, 150);
-      }
-      if (randNum%2 == 1){
-        turn_R60Deg();
-      } else {turn_R60Deg();}
-    }
-  }
-  if (!checkRight) {
-    turn_L60Deg();
-  }
-  if (!checkLeft) {
-    turn_R60Deg();
-  }   
-  if (!checkRight && !checkLeft) {
-    turn_R60Deg();
-    turn_R60Deg();
-  }
+  if (digitalRead(topIRL)) {lineDetected = true; advance(150,0);}
+  if (digitalRead(topIRL) && lineDetected) { advance(150,0); }
+  if (!digitalRead(topIRL) && lineDetected) { advance(0,150); }
+  if (digitalRead(topIRM) && digitalRead(topIRR) && digitalRead(topIRL) && digitalRead(ballDetect)) { stopNow(); }
+  if (digitalRead(topIRM) && digitalRead(topIRR) && digitalRead(topIRL) && !digitalRead(ballDetect)) { advance(150, 150); lineDetected = false;}
+  if (!lineDetected) { advance(150,150); }
 
   if (debug) {
     Serial.print(digitalRead(topIRL));
@@ -186,6 +132,8 @@ void loop() {
     Serial.print(digitalRead(topIRM));
     Serial.print(" - ");
     Serial.println(digitalRead(topIRR));
+    
+    delay(200);
     Serial.println(" ---------------------------------- ");
     Serial.print(rightSensor);
     Serial.print(" - ");
