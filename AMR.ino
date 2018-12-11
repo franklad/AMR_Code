@@ -20,7 +20,7 @@ const int fan = A5;
 const int potPin = A4;
 
 int speedR, mapedVal, speedL, randNum;
-const uint32_t period = 500L;
+const uint32_t period = 150L;
 long distance, duration, rightSensor, leftSensor, midSensor;
 bool debug, minDistance, checkRight, checkLeft, checkMid, fireL, fireM, fireR, isSideR, isSideL, lineDetected;
 
@@ -144,7 +144,7 @@ void loop() {
         }
       if (checkLeft){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
-          turn_R(150, 150);
+          turn_R(speedR, speedR);
           if (digitalRead(topIRL)) {lineDetected = true; 
             stopNow();
             break;}
@@ -152,7 +152,7 @@ void loop() {
       }
        if (checkRight){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
-          turn_L(150, 150);
+          turn_L(speedR, speedR);
           if (digitalRead(topIRL)) {lineDetected = true; 
             stopNow();
             break;}
@@ -166,18 +166,24 @@ void loop() {
   else{
     if (checkLeft){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
-          turn_R(150, 150);
+          turn_R(speedR, speedR);
         }
       }
       if (checkRight){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
-          turn_L(150, 150);
+          turn_L(speedR, speedR);
         }
       }
       if (checkMid) {
         if (randNum%2 == 1){
-          turn_R60Deg();
-      } else {turn_R60Deg();}
+          for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+            turn_L(speedR, speedR);
+          }      
+      } else {
+        for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+            turn_R(speedR, speedR);
+          } 
+        }
       }
       if (!checkLeft && !checkRight){
         advance(speedR,speedR);
