@@ -140,7 +140,9 @@ void loop() {
     }
     else{
       if (digitalRead(topIRL)) {lineDetected = true; 
-        advance(speedR,0);
+          for (uint32_t tStart = millis(); (millis() - tStart) < 100; ) {
+            advance(speedR, 0);
+          }
         }
       if (checkLeft){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
