@@ -7,8 +7,8 @@ const int trigPinL = A0;
 const int echoPinL = A1;
 const int trigPinR = A2;
 const int echoPinR = A3;
-const int trigPinR = 10;
-const int echoPinR = 9;
+const int trigPinM = 10;
+const int echoPinM = 9;
 
 const int topIRL = 3;
 const int topIRM = 11;
@@ -21,8 +21,8 @@ const int potPin = A4;
 
 int speedR, mapedVal, speedL, randNum;
 const uint32_t period = 300L;
-long distance, duration, rightSensor, leftSensor;
-bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR, isSideR, isSideL, lineDetected;
+long distance, duration, rightSensor, leftSensor, midSensor;
+bool debug, minDistance, checkRight, checkLeft, checkMid, fireL, fireM, fireR, isSideR, isSideL, lineDetected;
 
 long SonarSensor(int trigPin, int echoPin) {
  digitalWrite(trigPin, LOW);
@@ -114,13 +114,17 @@ void setup() {
   lineDetected = false;
 }
 void loop() {
+  randNum = random(300);
   speedR = map(analogRead(potPin),0,1023,100,250);
   rightSensor = SonarSensor(trigPinR, echoPinR);
   delay(50);
   leftSensor = SonarSensor(trigPinL, echoPinL);
   delay(50);
+  midSensor = SonarSensor(trigPinM, echoPinM);
+  delay(50);
   checkRight = rightSensor <= 25;
   checkLeft = leftSensor <= 25;
+  checkMid = midSensor <= 15;
   if(ballDetect) {
     Serial.println("Ball Mode");
     
@@ -133,7 +137,7 @@ void loop() {
     else{
       if (digitalRead(topIRL)) {lineDetected = true; 
         advance(speedR,0);
-        break;}
+        }
       if (checkLeft){ 
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
           turn_L(150, 150);
@@ -165,6 +169,11 @@ void loop() {
         for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
           turn_R(150, 150);
         }
+      }
+      if (checkMid) {
+        if (randNum%2 == 1){
+          turn_R60Deg();
+      } else {turn_R60Deg();}
       }
       if (!checkLeft && !checkRight){
         advance(speedR,speedR);
