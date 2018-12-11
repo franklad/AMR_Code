@@ -7,6 +7,8 @@ const int trigPinL = A0;
 const int echoPinL = A1;
 const int trigPinR = A2;
 const int echoPinR = A3;
+const int trigPinR = 10;
+const int echoPinR = 9;
 
 const int topIRL = 3;
 const int topIRM = 11;
@@ -18,7 +20,7 @@ const int fan = A5;
 const int potPin = A4;
 
 int speedR, mapedVal, speedL, randNum;
-const uint32_t period = 500L;
+const uint32_t period = 300L;
 long distance, duration, rightSensor, leftSensor;
 bool debug, minDistance, checkRight, checkLeft, fireL, fireM, fireR, isSideR, isSideL, lineDetected;
 
@@ -112,31 +114,60 @@ void setup() {
   lineDetected = false;
 }
 void loop() {
+  speedR = map(analogRead(potPin),0,1023,100,250);
   rightSensor = SonarSensor(trigPinR, echoPinR);
   delay(50);
   leftSensor = SonarSensor(trigPinL, echoPinL);
   delay(50);
-  minDistance = leftSensor > 1 && rightSensor > 1;
-  checkRight = rightSensor <= 8;
-  checkLeft = leftSensor <= 8;
-  if (digitalRead(topIRL)) {lineDetected = true; advance(150,0);}
-  if (digitalRead(topIRL) && lineDetected) { advance(150,0); }
-  if (!digitalRead(topIRL) && lineDetected) { advance(0,150); }
-  if (digitalRead(topIRM) && digitalRead(topIRR) && digitalRead(topIRL) && digitalRead(ballDetect)) { stopNow(); }
-  if (digitalRead(topIRM) && digitalRead(topIRR) && digitalRead(topIRL) && !digitalRead(ballDetect)) { advance(150, 150); lineDetected = false;}
-  if (!lineDetected) { advance(150,150); }
-
-  if (debug) {
-    Serial.print(digitalRead(topIRL));
-    Serial.print(" - ");
-    Serial.print(digitalRead(topIRM));
-    Serial.print(" - ");
-    Serial.println(digitalRead(topIRR));
+  checkRight = rightSensor <= 25;
+  checkLeft = leftSensor <= 25;
+  if(ballDetect) {
+    Serial.println("Ball Mode");
     
-    delay(200);
-    Serial.println(" ---------------------------------- ");
-    Serial.print(rightSensor);
-    Serial.print(" - ");
-    Serial.println(leftSensor);
+    if(lineDetected){
+      Serial.println("Line Mode");
+      if (digitalRead(topIRL)) { advance(speedR,0); }
+      if (!digitalRead(topIRL)) { advance(0,speedR); }
+      if (digitalRead(topIRM) && digitalRead(topIRR) && digitalRead(topIRL)) { stopNow(); }
+    }
+    else{
+      if (digitalRead(topIRL)) {lineDetected = true; 
+        advance(speedR,0);
+        break;}
+      if (checkLeft){ 
+        for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+          turn_L(150, 150);
+          if (digitalRead(topIRL)) {lineDetected = true; 
+            stopNow();
+            break;}
+        }
+      }
+       if (checkRight){ 
+        for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+          turn_R(150, 150);
+          if (digitalRead(topIRL)) {lineDetected = true; 
+            stopNow();
+            break;}
+        }
+      }
+      if (!checkLeft && !checkRight){
+        advance(speedR,speedR);
+      }
+    }  
+  } 
+  else{
+    if (checkLeft){ 
+        for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+          turn_L(150, 150);
+        }
+      }
+      if (checkRight){ 
+        for (uint32_t tStart = millis(); (millis() - tStart) < period; ) {
+          turn_R(150, 150);
+        }
+      }
+      if (!checkLeft && !checkRight){
+        advance(speedR,speedR);
+      }
   }
 }
